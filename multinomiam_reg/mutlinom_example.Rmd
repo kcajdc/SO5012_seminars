@@ -54,8 +54,80 @@ factorvars <- c("VoteIntention", "Region", "Gender", "Ethnicity",
                 "MaritalStatus", "Housing", "Qualifications")
 for (v in factorvars) {
   ukvote2010[[v]] <- as.factor(ukvote2010[[v]])
+  print(table(ukvote2010[[v]], useNA = "ifany"))
 }
+
+summary(ukvote2010)
+# Now that we have set the factor variables correctly, 
+# this short cut will display most of the descriptives, but not the region
+# as there are too many levels
+table(ukvote2010$Region, useNA = "ifany")
+
+# bt lets pay special attention to the VotingIntention variable, as this 
+# will be our depdendent
+
+table(ukvote2010$VoteIntention, useNA = "ifany")
+prop.table(table(ukvote2010$VoteIntention, useNA = "ifany"))
+
+```
+
+Here we can see, after setting the factor variables correctly, that none of the questions have any missing values, except for the voting intention variable, where `r round(100*prop.table(table(ukvote2010$VoteIntention, useNA = "ifany"))[[5]],1)`% are missing values - presumably people who did not express an firm opinion (but to confirm this we'd need to look at the data documentation, which you do not have)
+
+\newpage
+
+## Question 1
+
+*Cross-tabulate the variable VoteIntention with the variable Qualifications, setting the table to include the conditional probabilities of VoteIntention, given Qualifications. Which parties do better among those with higher qualification levels and which do worse?*
+
+```{r question 1}
+
+table(ukvote2010$Qualifications,ukvote2010$VoteIntention)
+
+# as this is two way table, we need to tell R which direction to calculate the 
+# percentages - this is done by the ,1 at the end of the prop.table command
+prop.table(table(ukvote2010$Qualifications,ukvote2010$VoteIntention),1)
+
+# and we can turn it into percentages and round...
+round(100*prop.table(table(ukvote2010$Qualifications,ukvote2010$VoteIntention),1),1)
+
+```
+
+Tracing the vote shares (fractions) for each party, we see that Labour’s share is steady at around 25-28%, regardless of education levels. The Conservative share declines with increasing education, from 41% at the lowest levels to 34% at the highest levels.  The Liberal Democratic share increases with higher education, rising from 18 to 30%, while those supporting other parties declines from 13% to 9% as education levels increase.
+
+It is worth noting two things:
+1. that these statistics are based on 2010 data, before the coalition government that introduced austerity, and when the Liberal Democrats had their first experience of national government. In short, their vote share was *very* different to what is seen now. 
+2. a GCE - a General Certificate of Education Advanced Level - is commonly known as an A-level but this also includes equivalents (BTECs and the like)
+
+\newpage
+
+## Question 2
+
+*Fit a multinomial logistic regression model for VoteIntention, with Labour as the baseline outcome category, using only the variable Qualifications as an explanatory (factor) variable. How can we see from the coefficients which parties do better among those with higher education levels and which do worse? Check that you see the same general patterns as you saw when you cross-tabulated the same data.*
+
+```{r basic mn logit}
+
+levels(ukvote2010$VoteIntention)
+
+# so first we need to relevel Vote Intention 
+ukvote2010$VoteIntention <- relevel(ukvote2010$VoteIntention, ref = "Labour")
+
+m1 <- multinom(VoteIntention~ Qualifications, data = ukvote2010)
+zz<-summary(m1)
+
+```
+This stores and displays the coefficients and the *standard errors* (a little like standard deviation, but how much variation there is in the estimate of a coefficient within a model). This needs to be used to calculate the p-values, as the `multinom` package does not do it automatically!
+
+```{r first p values}
+
+zvals <- coef(m1)/summary(m1)$standard.errors
+pvals <- (1 - pnorm(abs(zvals), 0, 1)) * 2
+
+# and then display the model along with p values afterwards
+summary(m1)
+pvals
 
 
 ```
+
+
 
