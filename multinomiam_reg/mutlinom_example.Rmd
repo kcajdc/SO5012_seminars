@@ -17,16 +17,16 @@ rm(list = ls())
 
 ## Introduction
 
-This seminar sheet is intended as a introduction to multinomial regression and is a combination of code and **inpterpreation** for the worksheet *SO5012_semX_multinomial_regression.docx*. 
+This seminar sheet is intended as a introduction to multinomial regression and is a combination of code and **interpretation** for the worksheet *SO5012_semX_multinomial_regression.docx*. 
 
 As with all the previous weeks, first we need to:
 1. Set the working directory
 2. Load the packages we'll be using
 3. Load the data
 
-Here we'll use the `echo = false` command on the r chunk so that our output is not filled up by this set up code, although the code will be vivible. 
+Here we'll use the `results='hide', message=FALSE` command on the r chunk so that our output is not filled up by this set up code, although the code will be visible. 
 
-```{r loading, echo=FALSE}
+```{r loading, results='hide', message=FALSE}
 
 # setwd(whereeveryousavestuff)
 # Note to RP - this isnt needed for a project, but you'll need to change if just posting rmd
@@ -36,7 +36,26 @@ library(nnet)
 
 ukvote2010 <- read.csv("data/ukvote2010.csv")
 
-
 ```
 
+To continue with the preparatory work, and **before** we dive into answering the questions, we first need to look at our data and see what it is, perhaps with some data cleaning if needed.
+
+```{r inspection and cleaning}
+
+str(ukvote2010)
+
+names(ukvote2010)
+# we c an that "VoteIntention", "Region", "Gender", "Ethnicity", "MaritalStatus", 
+# "Housing", "Qualifications" are character variables - lets set them to factors
+
+# and lets be smart and do it in a loop
+
+factorvars <- c("VoteIntention", "Region", "Gender", "Ethnicity", 
+                "MaritalStatus", "Housing", "Qualifications")
+for (v in factorvars) {
+  ukvote2010[[v]] <- as.factor(ukvote2010[[v]])
+}
+
+
+```
 
