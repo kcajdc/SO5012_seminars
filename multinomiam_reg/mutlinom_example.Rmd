@@ -11,7 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 rm(list = ls())
 
-whereeveryousavestuff <- "/Users/jackcunliffe/GoogleDrive/teaching_GD/SO5012_analysing_data_real_world/seminars/week7_logistic"
+#whereeveryousavestuff <- "a place"
+# Note to RP - Just sneakily saving a variable that has the directory path so make the code look better below
 ```
 
 ## Introduction
@@ -26,6 +27,14 @@ As with all the previous weeks, first we need to:
 Here we'll use the `echo = false` command on the r chunk so that our output is not filled up by this set up code, although the code will be vivible. 
 
 ```{r loading, echo=FALSE}
+
+# setwd(whereeveryousavestuff)
+# Note to RP - this isnt needed for a project, but you'll need to change if just posting rmd
+
+if (!require(nnet)) install.packages("nnet")
+library(nnet)
+
+ukvote2010 <- read.csv("data/ukvote2010.csv")
 
 
 ```
