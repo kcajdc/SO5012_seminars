@@ -112,7 +112,7 @@ levels(ukvote2010$VoteIntention)
 ukvote2010$VoteIntention <- relevel(ukvote2010$VoteIntention, ref = "Labour")
 
 m1 <- multinom(VoteIntention~ Qualifications, data = ukvote2010)
-zz<-summary(m1)
+summary(m1)
 
 ```
 This stores and displays the coefficients and the *standard errors* (a little like standard deviation, but how much variation there is in the estimate of a coefficient within a model). This needs to be used to calculate the p-values, as the `multinom` package does not do it automatically!
@@ -122,10 +122,35 @@ This stores and displays the coefficients and the *standard errors* (a little li
 zvals <- coef(m1)/summary(m1)$standard.errors
 pvals <- (1 - pnorm(abs(zvals), 0, 1)) * 2
 
-# and then display the model along with p values afterwards
-summary(m1)
+# and then display the exponentiated coefficient along with p values afterwards
+exp(coef(m1))
 pvals
 
+```
+
+Since Labour is the baseline outcome level, all coefficients correspond to a comparison of support for some other party to support for Labour. The raw coefficients represent the log odds of a Labour voting intention vs Conservative. The exponentiated form is the ratio of the probabilities of choosing one outcome category over the other, baseline category (in this case, Labour).
+
+Looking at the coefficients for Conservative, we see that lower education levels are associated with greater support for the Conservatives, relative to Labour (positive coefficients for education levels below BA which translates to values above 1 when they are exponentiated).  There is not much different between the various education levels that are less than a BA, which is consistent with the cross-tabulation results in question 1. What this means, is that the gap between Labour and Conservative voting intention is larger at the lower education levels than it is at the BA level. 
+
+Looking at the coefficients for Liberal Democrat, we see that lower education levels are associated with lower levels of support for the Liberal Democrats, relative to Labour (increasingly negative raw coefficients/values below 1 when exponentiated as education levels go down).  In this case, this means that the lower education levels, the gap between Labour and Lib Dem voters increases, in favour of Labour.
+
+Looking at the coefficients for Other, we see that education levels below BA are associated with higher levels of support for other parties, but there is not a clear trend among the lower education levels - i.e. that the gap between the parties is generally smaller at high education levels, but there is not clear difference across the education levels.   
+
+All of these patterns are consistent with what we see in the cross-tabulation id you look at the 'gaps' between each parties vote intention share at each education level and compare them to the gap at the highest education level.
+
+
+
+
+```{r notes}
+
+ukvote2010$temp[ukvote2010$VoteIntention == "Labour"] <- 0
+ukvote2010$temp[ukvote2010$VoteIntention == "Conservative"] <- 1
+
+m2 <- glm(temp ~ Qualifications, data = ukvote2010[ukvote2010$VoteIntention == "Labour"| 
+                                                              ukvote2010$VoteIntention =="Conservative",])
+
+summary(m2)
+exp(coef(m2))
 
 ```
 
