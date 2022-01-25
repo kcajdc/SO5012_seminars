@@ -1,0 +1,18 @@
+---
+title: "SO5012 Analysising Data in the Real World  \n Ordinal regression  \n Solutions and commentary"
+output: 
+  pdf_document: 
+    toc: yes
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list = ls())
+
+#whereeveryousavestuff <- "a place"
+# Note to RP - Just sneakily saving a variable that has the directory path so make the code look better below
+```
+
+# Introduction
