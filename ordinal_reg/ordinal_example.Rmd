@@ -16,3 +16,97 @@ rm(list = ls())
 ```
 
 # Introduction
+
+This seminar sheet is intended as a introduction to multinomial regression and is a combination of code and **interpretation** for the worksheet *SO5012_semX_ordinal_regression.docx*. 
+
+As with all the previous weeks, first we need to:
+1. Set the working directory
+2. Load the packages we'll be using
+3. Load the data
+
+Here we'll use the `results='hide', message=FALSE` command on the r chunk so that our output is not filled up by this set up code, although the code will be visible. 
+
+```{r loading, results='hide', message=FALSE}
+
+# setwd(whereeveryousavestuff)
+# Note to RP - this isnt needed for a project, but you'll need to change if just posting rmd
+
+if (!require(nnet)) install.packages("nnet")
+library(nnet)
+
+if (!require(lmtest)) install.packages("lmtest")
+library(lmtest)
+
+cricket <- read.csv("data/cricket.csv")
+
+```
+
+As with each work sheet, and all analysis, we need to do basic checks on the data before starting any analysis proper.
+
+```{r inspection and cleaning}
+
+str(cricket)
+
+# we see that home, visitor, winner, result and period are character vectors. 
+# Lets convert them into factors.
+
+factorvars <- c("home", "visitor", "winner", "result", "period")
+for (v in factorvars) {
+  cricket[[v]] <- as.factor(cricket[[v]])
+  print(levels(cricket[[v]])) # this simply report the resulting levels
+}
+
+# the result variable is currently in the wrong order, running "Draw", "Home", "Visitor"
+# this needs re-levelling.
+
+cricket$result <- factor(cricket$result, levels = c("Visitor", "Draw", "Home"))
+levels(cricket$result)
+
+```
+
+Only now are we ready to start the questions!
+
+# Questions and answers
+
+## Question 1
+
+As always, spend some time playing with the data to understand how it works. In particular, answer these following questions (HINT: you may need to do some data manipulation):
+
+a.	How many series were played in each year, in total?
+```{r 1a}
+table(cricket$year)
+```
+
+b.	List each country by their number of series wins
+```{r 1b}
+table(cricket$winner)
+```
+
+c.	How many series have been played in each country, and how many series in total has each country played?
+
+```{r 1c}
+table(cricket$home)
+
+table(cricket$home) + table(cricket$visitor)
+```
+
+
+
+d.	How many wins does each country have when they were a visitor? How many draws? And loses?
+```{r 1d}
+# wins
+table(cricket$visitor[cricket$result == "Visitor"])
+
+# draw
+table(cricket$visitor[cricket$result == "Draw"])
+
+# loses
+table(cricket$visitor[cricket$result == "Home"])
+
+```
+
+d.	Which country has the highest win ratio?
+e.	Which country has the largest difference between the percentage of wins at home compared to away?
+f.	What is average difference between the home team’s rating and the away team’s rating? In which series was this largest? 
+g.	Are there any occurrences when the home team had a higher rating but failed to win the series? List them by year. 
+
