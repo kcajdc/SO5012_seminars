@@ -47,8 +47,11 @@ To continue with the preparatory work, and **before** we dive into answering the
 
 str(ukvote2010)
 
+# Note - only do this if there are a limited number of variables, or you will end
+# up with tonnes of output, often up to hundreds of pages!
+
 names(ukvote2010)
-# we c an that "VoteIntention", "Region", "Gender", "Ethnicity", "MaritalStatus", 
+# We see that "VoteIntention", "Region", "Gender", "Ethnicity", "MaritalStatus", 
 # "Housing", "Qualifications" are character variables - lets set them to factors
 
 # and lets be smart and do it in a loop
