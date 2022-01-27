@@ -70,24 +70,50 @@ Only now are we ready to start the questions!
 
 ## Question 1
 
-As always, spend some time playing with the data to understand how it works. In particular, answer these following questions (HINT: you may need to do some data manipulation):
+*As always, spend some time playing with the data to understand how it works. In particular, answer these following questions (HINT: you may need to do some data manipulation):*
 
 a.	How many series were played in each year, in total?
 ```{r 1a}
+
+# Each row is a series, and there is a variable related to year - so simply tabulate it!
+
 table(cricket$year)
 ```
 
 b.	List each country by their number of series wins
 ```{r 1b}
+
+# Again, each row is a series and the winner is identified
+
 table(cricket$winner)
 ```
 
 c.	How many series have been played in each country, and how many series in total has each country played?
 
 ```{r 1c}
+
+# The first is easy
+
 table(cricket$home)
 
+# The second requires us to sum the number of occurrences of each country across two columns
+
 table(cricket$home) + table(cricket$visitor)
+
+# This only works as the two tables have the same countries, in the same order. 
+# If they don't - its more complicated...
+# see https://stackoverflow.com/questions/26986363/adding-two-vectors-by-names
+
+# first save each table:
+v1 <- table(cricket$home)
+v2 <- table(cricket$visitor)
+# make them into one long table, with repeated countries
+v3 <- c(v1, v2)
+v3
+# then a little trick to compress it
+# this means 'create a crosstab of v3, by the names of v3'
+total_series <- xtabs(v3 ~ names(v3))
+total_series
 ```
 
 
@@ -105,8 +131,53 @@ table(cricket$visitor[cricket$result == "Home"])
 
 ```
 
-d.	Which country has the highest win ratio?
-e.	Which country has the largest difference between the percentage of wins at home compared to away?
-f.	What is average difference between the home team’s rating and the away team’s rating? In which series was this largest? 
-g.	Are there any occurrences when the home team had a higher rating but failed to win the series? List them by year. 
+## Question 2
+
+*2.	These question appear similar, but are harder and require some more detailed data manipulation. *
+
+a.	Which country has the highest win ratio?
+```{r 2a}
+
+# This isn't easy...
+# first we need the total games of each country, from question 1c
+total_series
+
+# and then the total wins - i.e. 
+win_series <- table(cricket$winner)
+win_series
+
+# then we need to divide one by the other, but  the tables are different 
+# because of draws (look at both),
+
+# so we need to create a little data frame of the two, using cbind (column bind)
+
+wins_total <- data.frame(cbind(wins = win_series, 
+                               total = total_series[names(win_series)]))
+
+# and now we can divide one column by the other
+wins_total$win_ratio <- wins_total$wins/wins_total$total
+
+# and then display it, ordering by win ratio descending
+wins_total[order(-wins_total$win_ratio),]
+
+```
+
+
+b.	Which country has the largest difference between the percentage of wins at home compared to away?
+
+```{r 2b}
+
+```
+
+c.	What is average difference between the home team’s rating and the away team’s rating? In which series was this largest? 
+
+```{r 2c}
+
+```
+
+d.	Are there any occurrences when the home team had a higher rating but failed to win the series? List the teams involved by year. 
+
+```{r 2d}
+
+```
 
