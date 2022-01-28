@@ -31,11 +31,15 @@ Here we'll use the `results='hide', message=FALSE` command on the r chunk so tha
 # setwd(whereeveryousavestuff)
 # Note to RP - this isnt needed for a project, but you'll need to change if just posting rmd
 
-if (!require(nnet)) install.packages("nnet")
-library(nnet)
+if (!require(MASS)) install.packages("MASS")
+library(MASS)
 
-if (!require(lmtest)) install.packages("lmtest")
-library(lmtest)
+if (!require(tidyverse)) install.packages("tidyverse")
+library(tidyverse)
+
+if (!require(reshape2)) install.packages("reshape2")
+library(reshape2)
+
 
 cricket <- read.csv("data/cricket.csv")
 
@@ -65,6 +69,8 @@ levels(cricket$result)
 ```
 
 Only now are we ready to start the questions!
+
+\newpage
 
 # Questions and answers
 
@@ -131,9 +137,25 @@ table(cricket$visitor[cricket$result == "Home"])
 
 ```
 
+e.	What is average difference between the home team’s rating and the away team’s rating? In which series was this largest? 
+
+```{r 1e}
+
+summary(cricket$drating)
+
+cricket[cricket$drating == (summary(cricket$drating))[6],]
+
+# This looks confusing, but (summary(cricket$drating))[6] is simply returning 
+# the value of the summary that is the 6th entry in the summary table
+# i.e. the maximum, and only returning the row of dataset where drating equals it. 
+
+```
+
+\newpage
+
 ## Question 2
 
-*2.	These question appear similar, but are harder and require some more detailed data manipulation. *
+These question appear similar, but are harder and require some more detailed data manipulation.
 
 a.	Which country has the highest win ratio?
 ```{r 2a}
@@ -167,17 +189,137 @@ b.	Which country has the largest difference between the percentage of wins at ho
 
 ```{r 2b}
 
+# No of wins at home per country
+win_home <- table(cricket$winner[cricket$result == "Home"])
+
+# Number of home series
+home_series <- table(cricket$home)
+
+# and using the method from 2a
+
+home_total <- data.frame(cbind(win_home = win_home,
+                                 no_home = home_series[names(win_home)]))
+
+home_total$home_ratio <- home_total$win_home / home_total$no_home
+
+# and then the same for away series wins
+win_away <- table(cricket$winner[cricket$result == "Visitor"])
+visitor_series <- table(cricket$visitor)
+visitor_total <- data.frame(cbind(win_away = win_away,
+                                  no_visitor = visitor_series[names(win_away)]))
+visitor_total$visit_ratio <- visitor_total$win_away/visitor_total$no_visitor
+
+ratios_home_visit <- cbind(home_total, visitor_total)
+
+ratios_home_visit$ratio_diff <- ratios_home_visit$home_ratio - ratios_home_visit$visit_ratio
+
+ratios_home_visit[order(-ratios_home_visit$ratio_diff),]
+
 ```
 
-c.	What is average difference between the home team’s rating and the away team’s rating? In which series was this largest? 
+c.	Are there any occurrences when the home team had a higher rating but failed to win the series? List the teams involved by year. What about when the home team with a higher rating lost? 
 
 ```{r 2c}
 
+loss_high_rating <- cricket[cricket$drating > 0 & cricket$result != "Home",]
+loss_high_rating[,3:4]
+
+# and without the intermediate step for visitor wins
+cricket[cricket$drating > 0 & cricket$result == "Visitor",3:4]
+
+# and just to see who did most often:
+
+table(cricket[cricket$drating > 0 & cricket$result == "Visitor",]$home)
+
 ```
 
-d.	Are there any occurrences when the home team had a higher rating but failed to win the series? List the teams involved by year. 
+Overall, these questions should demonstrate that there are multiple ways to interrogate the dataset and, for anyone with an interest in cricket at least, there are numerous interesting findings within it. The issue is that one can quickly become lost just pulling our various statistics, which don’t answer a fundamental and general questions such as (i) how well do the team ratings predict results of test series, and (ii) what is the extent of home advantage? Ordinal regression can be used here. 
 
-```{r 2d}
+
+## Question 3. 
+
+Fit an ordinal regression model for result, with drating as the only explanatory variable. Confirm that the effect of drating is statically significant.*
+
+```{r ordinal1}
+
+m1 <- polr(result ~ drating , data = cricket)
+summary(m1)
+
+# as with multinomial regression this table does not include p values which need
+# to be calculated separately - see https://stats.oarc.ucla.edu/r/dae/ordinal-logistic-regression/
+
+ctable1 <- coef(summary(m1))
+p <- pnorm(abs(ctable1[, "t value"]), lower.tail = FALSE) * 2
+ctable <- cbind(ctable1, "p value" = p)
+round(ctable1,4)
+
+# and of course we need to exponential of the coeff to interpret
+exp(coef(m1))
 
 ```
 
+The P-value of the coefficient of drating is P < 0.001, so the coefficient is statistically significant. The estimated coefficient is 0.044, and its exponential is exp(0.044) = 1.045. The interpretation of this is that a 1-point increase in the difference between home and visiting teams’ ratings is associated with 4.5% increase in the odds of a more favourable outcome for the home team. This same increase applies to both the odds of home win, against draw or visitor winning, and the odds of home win or draw, against visitor winning. 
+
+
+## Question 4. 
+
+Plot the fitted values of the probabilities of the individual categories of Y  (i.e. the three values of result options) against drating
+
+```{r 4a}
+
+# create a little fake dataset to run the model against - lets go with drating
+# from - 60 to 60, which is a good part of the rnage seen in question 1 e
+
+test_data <- data.frame(drating = seq(-60,60,1))
+prediction <- data.frame( cbind(drating = test_data$drating, 
+                          predict(m1, test_data, type = "probs") ))
+
+
+ggplot(data = prediction,
+       aes(drating)) +
+        geom_line(aes(y = Visitor, colour = "Visitor")) +
+        geom_line(aes(y = Draw, colour = "Draw")) +
+        geom_line(aes(y = Home, colour = "Home")) +
+        geom_vline(xintercept = 0, linetype = "dashed", color = "grey66") +
+  theme_minimal() +
+  ylab("Probability") +
+  xlab("Difference in ratings (+ve = home team rated higher)") 
+       
+
+```
+
+## Question 5
+
+What does this show you in terms of who is likely to win? What can tou say about the probability of a draw? And is there a home advantage? 
+
+The plot of the probabilities of the individual outcomes shows that the probability of the home team winning is very high when drating is large and positive, i.e. when the home team is much stronger than the visiting team. Similarly, the probability of the visitors winning is high when drating  is large and negative. The ratings of the teams before a series are thus strongly predictive of the result of the series. A draw is never the likeliest outcome, and has probabilities of roughly 0.2 for most of the values of drating. 
+
+As to whether there is a home advantage: the probability curves for wins by home and visiting teams are quite clearly not mirror images of each other - at each value of the ratings difference between the same two teams, a team has a much higher predicted probability of winning if it plays at home than if it plays away. In particular, in a series of two equally strong teams the probability that the home team wins is around 0.55, and the probability that the visiting team wins is about 0.22. This shows evidence of a substantial home advantage in test cricket. 
+
+## Question 6. 	
+
+It has been argued that the rating system has become less relevant since the mid 90s, and particularly after 2002. Similarly, the effect of rating is thought to be less pronounced when there are few matches in series. Can you test these hypotheses? *
+
+```{r further controls}
+
+m2 <- polr(result ~ drating + matches + period, data = cricket)
+summary(m2)
+
+# as with multinomial regression this table does not include p values which need
+# to be calculated separately - see https://stats.oarc.ucla.edu/r/dae/ordinal-logistic-regression/
+
+ctable2 <- coef(summary(m2))
+p2 <- pnorm(abs(ctable2[, "t value"]), lower.tail = FALSE) * 2
+ctable2 <- cbind(ctable2, "p value" = p2)
+round(ctable2,4)
+
+# and of course we need to exponential of the coeff to interpret
+exp(coef(m2))
+
+p2
+
+```
+
+We can see from this output that neither the number of matches nor the time period in which the game was played are signficant. Similarly the value of drating coefficeient does not change much so we can say that in all likelihood, that the rating of teams is important regardless of the number of matches and is as relevent now as it was in the 1960s.
+
+Note: we have used here period as a categorical variable here to see if there are non-liner changes over the time period. We could have added the raw year value if our hypothesis was that the outcomes had changed the probability of occuring over over time
